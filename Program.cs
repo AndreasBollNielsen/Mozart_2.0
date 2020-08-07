@@ -11,13 +11,17 @@ namespace Mozart_2._0
 {
     class Program
     {
+        public static string projectFolder = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.FullName;
+        public static string MinuetFiles = Path.Combine(projectFolder, @"Wave\Minutt\M");
+        public static string TrioFiles = Path.Combine(projectFolder, @"Wave\Trio\T");
+
+        public static string[,] minutpath = new string[11, 16];
+        public static string[,] triopath = new string[6, 16];
+
+        public static int Dice1 = 0;
+        public static int Dice2 = 0;
         static void Main(string[] args)
         {
-            string projectFolder = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.FullName;
-            string MinuetFiles = Path.Combine(projectFolder, @"Wave\Minutt\M");
-            string TrioFiles = Path.Combine(projectFolder, @"Wave\Trio\T");
-
-
             //init arrays
             int[,] minuet = new int[,]
             {
@@ -33,80 +37,117 @@ namespace Mozart_2._0
             { 3, 87, 165, 61, 135, 47, 147, 33, 102, 4, 31, 164, 144, 59, 173, 78},
             { 54, 130, 10, 103, 28, 37, 106, 5, 35, 20, 108, 92, 12, 124, 44, 131}
             };
-
             int[,] trio = new int[,]
-            {
+                {
             { 72, 6, 59, 25, 81, 41, 89, 13, 36, 5, 46, 79, 30, 95, 19, 66},
             { 56, 82, 42, 74, 14, 7, 26, 71, 76, 20, 64, 84, 8, 35, 47, 88},
             { 75, 39, 54, 1, 65, 43, 15, 80, 9, 34, 93, 48, 69, 58, 90, 21},
             { 40, 73, 16, 68, 29, 55, 2, 61, 22, 67, 49, 77, 57, 87, 33, 10},
             { 83, 3, 28, 53, 37, 17, 44, 70, 63, 85, 32, 96, 12, 23, 50, 91},
             { 18, 45, 62, 38, 4, 27, 52, 94, 11, 92, 24, 86, 51, 60, 78, 31}
-            };
-
-            List<List<string>> minutpath = new List<List<string>>();
-            List<List<string>> triopath = new List<List<string>>();
-
-            SoundPlayer player = new SoundPlayer();
-
-            //get path to wav files
-            for (int index = 0; index < minuet.GetLength(0); index++)
-            {
-                List<string> temp = new List<string>();
-
-                for (int i = 0; i < minuet.GetLength(1); i++)
-                {
-
-                    temp.Add(MinuetFiles + minuet[index, i] + ".wav");
-                }
-                minutpath.Add(temp);
-            }
-
-            for (int index = 0; index < trio.GetLength(0); index++)
-            {
-                List<string> temp = new List<string>();
-
-                for (int i = 0; i < trio.GetLength(1); i++)
-                {
-                    temp.Add(TrioFiles + trio[index, i] + ".wav");
-
-                }
-                triopath.Add(temp);
-            }
-
-            //roll two dices to find row and col for minuit
-            Random randdice = new Random();
-
+                };
             string[] notes = new string[16];
-            for (int numfiles = 0; numfiles < 16; numfiles++)
-            {
-                int dice1 = randdice.Next(0, 6);
-                int dice2 = randdice.Next(0, 6);
-                notes[numfiles] = minutpath[dice1][dice2];
 
-               
+            //get paths to wav files
+            minutpath = MusicPath(minuet, MinuetFiles);
+            triopath = MusicPath(trio, TrioFiles);
+
+            
+            //generate music notes from dices
+            notes = outputNotes(minutpath,false);
+
+            //play music minuet
+            PlayMusic(notes);
+
+            //generate music notes trio
+            notes = outputNotes(triopath, true);
+
+            //play music trio
+            PlayMusic(notes);
+
+            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Output string array of paths to the wav files
+        /// </summary>
+        /// <param name="Musicpaths"> path to the wav file</param>
+        /// <param name="UseRow"> specify row or cells to be used </param>
+        /// <returns></returns>
+        public static string[] outputNotes(string[,] Musicpaths, bool UseRow)
+        {
+            string[] output = new string[16];
+
+            for (int i = 0; i < 16; i++)
+            {
+                if (!UseRow)
+                {
+                    RollDices(2);
+                    output[i] = Musicpaths[Dice1, i];
+                }
+                else
+                {
+                    output[i] = Musicpaths[Dice1,Dice2];
+                }
+
             }
 
-            foreach (string music in notes)
+            return output;
+        }
+
+        /// <summary>
+        /// Generating random values for dice 1 & dice 2
+        /// </summary>
+        /// <param name="NumbDices"> specify the number of dices in use </param>
+        public static void RollDices(int NumbDices)
+        {
+            Random randdice = new Random();
+            if (NumbDices > 1)
+            {
+                Dice1 = randdice.Next(0, 6);
+                Dice2 = randdice.Next(0, 6);
+            }
+            else
+            {
+                Dice1 = randdice.Next(0, 6);
+            }
+        }
+
+        /// <summary>
+        /// Output paths to each specific wav file
+        /// </summary>
+        /// <param name="NoteSheet"> 2D array of ints </param>
+        /// <param name="Folderpath"> string path to the Solution folder of the wav files</param>
+        /// <returns></returns>
+        public static string[,] MusicPath(int[,] NoteSheet, string Folderpath)
+        {
+            string[,] temp = new string[NoteSheet.GetLength(0), NoteSheet.GetLength(1)];
+            for (int index = 0; index < NoteSheet.GetLength(0); index++)
+            {
+                for (int i = 0; i < NoteSheet.GetLength(1); i++)
+                {
+
+                    temp[index, i] = Folderpath + NoteSheet[index, i] + ".wav";
+                }
+            }
+
+            return temp;
+        }
+
+        /// <summary>
+        /// plays the wav files from a list of strings
+        /// </summary>
+        /// <param name="Notes"></param>
+        public static void PlayMusic(string[] Notes)
+        {
+            SoundPlayer player = new SoundPlayer();
+            foreach (string music in Notes)
             {
                 player.SoundLocation = music;
                 player.Load();
-                player.Play();
+                player.PlaySync();
+                
             }
-
-
-            //roll dice to find row
-            int dice = randdice.Next(0, 6);
-
-            for (int i = 0; i < triopath[dice].Count; i++)
-            {
-                player.SoundLocation = triopath[dice][i];
-                player.Load();
-                player.Play();
-            }
-
-
-            Console.ReadKey();
         }
     }
 }
